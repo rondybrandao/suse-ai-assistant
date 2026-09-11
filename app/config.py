@@ -14,6 +14,8 @@ class Settings(BaseSettings):
         "sentence-transformers/all-MiniLM-L6-v2"
     )
 
+    gemini_api_key: str
+
     class Config:
         env_file = ".env"
 

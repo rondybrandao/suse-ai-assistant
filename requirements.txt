@@ -18,3 +18,7 @@ numpy
 
 pytest
 httpx
+
+langchain-openai
+
+google-genai
