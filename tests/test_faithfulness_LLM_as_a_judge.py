@@ -2,7 +2,7 @@ from app.rag.embeddings import generate_embeddings
 from app.rag.qdrant_client import search_similar
 from app.rag.generator import generate_answer
 
-from app.evaluation.faithfulness import (
+from app.evaluation.faithfulness_LLM_as_a_judge import (
     calculate_faithfulness,
 )
 
@@ -25,6 +25,11 @@ answer = generate_answer(
     query,
     contexts,
 )
+
+answer = answer + """
+O sistema também envia automaticamente um e-mail
+de confirmação para o cliente após a finalização da OS.
+"""
 
 score, evaluations = calculate_faithfulness(
     answer,
