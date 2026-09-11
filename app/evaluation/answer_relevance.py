@@ -8,7 +8,7 @@ def calculate_answer_relevance(
     answer_lower = answer.lower()
 
     relevant_question_keywords = [
-        keyword,
+        keyword
         for keyword in relevant_keywords
         if keyword.lower() in question_lower
     ]
