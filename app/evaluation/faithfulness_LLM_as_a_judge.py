@@ -2,90 +2,100 @@ from google import genai
 
 from app.config import settings
 
+
 client = genai.Client(
     api_key=settings.gemini_api_key
 )
 
-def extract_claims(answer):
-    prompt = f"""
-            Extraia as afirmações factuais presentes na resposta abaixo.
-
-            Uma afirmação (claim) deve representar uma informação
-            que possa ser verificada usando uma fonte.
-
-            Não explique nada.
-            Retorne apenas uma afirmação por linha.
-
-            Resposta:
-            {answer}
-            """
-    interaction = client.interactions.create(
-        model= settings.gemini_model,
-        input=prompt,
-    )
-
-    claims = [
-        line.strip()
-        for line in interaction.output_text.splitlines()
-        if line.strip()
-    ]
-
-    return claims
-
-
-def evaluate_claim(claim, context):
-    prompt = f"""
-            Determine se a afirmação abaixo é sustentada pelo contexto.
-
-            Afirmação:
-            {claim}
-
-            Contexto:
-            {context}
-
-            Responda somente com:
-
-            SUPPORTED
-
-            ou
-
-            NOT_SUPPORTED
-            """    
-
-    interaction = client.interactions.create(
-        model= settings.gemini_model,
-        input=prompt,
-    )
-
-    result = interaction.output_text.strip().upper()
-
-    return result == "SUPPORTED"
 
 def calculate_faithfulness(
-        answer,
-        contexts,
+    answer,
+    contexts,
 ):
-    claims = extract_claims(answer)
-
-    if not claims:
-        return 0.0, []
-
     context_text = "\n\n".join(contexts)
+
+    prompt = f"""
+Você é um avaliador de Faithfulness para um sistema RAG.
+
+Analise a resposta abaixo usando EXCLUSIVAMENTE o contexto fornecido.
+
+Sua tarefa é:
+
+1. Identificar cada afirmação factual da resposta.
+2. Verificar se cada afirmação é sustentada pelo contexto.
+3. Classificar cada afirmação como:
+   - SUPPORTED
+   - NOT_SUPPORTED
+
+Uma afirmação é SUPPORTED somente quando o contexto
+fornece suporte suficiente para ela.
+
+Não considere conhecimento externo.
+
+Responda EXATAMENTE neste formato:
+
+CLAIM: <afirmação>
+STATUS: SUPPORTED
+
+CLAIM: <afirmação>
+STATUS: NOT_SUPPORTED
+
+Não adicione explicações.
+
+========================================
+CONTEXTO
+========================================
+
+{context_text}
+
+========================================
+RESPOSTA
+========================================
+
+{answer}
+"""
+
+    interaction = client.interactions.create(
+        model="gemini-3.6-flash",
+        input=prompt,
+    )
+
+    output = interaction.output_text.strip()
 
     evaluations = []
 
-    for claim in claims:
-        supported = evaluate_claim(
-            claim,
-            context_text,
-        )
+    current_claim = None
 
-        evaluations.append(
-            {
-                "claim": claim,
-                "supported": supported,
-            }
-        )
+    for line in output.splitlines():
+
+        line = line.strip()
+
+        if line.startswith("CLAIM:"):
+            current_claim = line.replace(
+                "CLAIM:",
+                "",
+                1,
+            ).strip()
+
+        elif line.startswith("STATUS:") and current_claim:
+
+            status = line.replace(
+                "STATUS:",
+                "",
+                1,
+            ).strip().upper()
+
+            evaluations.append(
+                {
+                    "claim": current_claim,
+                    "supported": status == "SUPPORTED",
+                }
+            )
+
+            current_claim = None
+
+    if not evaluations:
+        return 0.0, []
 
     supported_claims = sum(
         1
@@ -93,6 +103,6 @@ def calculate_faithfulness(
         if evaluation["supported"]
     )
 
-    score = supported_claims / len(claims)
+    score = supported_claims / len(evaluations)
 
     return score, evaluations
