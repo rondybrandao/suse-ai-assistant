@@ -36,6 +36,12 @@ answer = generate_answer(
     contexts,
 )
 
+answer = answer + """
+
+O sistema também envia automaticamente um e-mail
+de confirmação para o cliente após a finalização da OS.
+"""
+
 score = calculate_faithfulness(
     answer,
     contexts,
