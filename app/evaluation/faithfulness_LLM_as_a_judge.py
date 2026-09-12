@@ -12,12 +12,28 @@ def calculate_faithfulness(
     answer,
     contexts,
 ):
-    context_text = "\n\n".join(contexts)
+    """
+    Avalia se as afirmações da resposta
+    são sustentadas pelos contextos recuperados.
+
+    Retorna:
+
+        score:
+            proporção de afirmações sustentadas.
+
+        evaluations:
+            lista com cada afirmação e seu status.
+    """
+
+    context_text = "\n\n".join(
+        contexts
+    )
 
     prompt = f"""
 Você é um avaliador de Faithfulness para um sistema RAG.
 
-Analise a resposta abaixo usando EXCLUSIVAMENTE o contexto fornecido.
+Analise a resposta abaixo usando EXCLUSIVAMENTE
+o contexto fornecido.
 
 Sua tarefa é:
 
@@ -71,6 +87,7 @@ RESPOSTA
         line = line.strip()
 
         if line.startswith("CLAIM:"):
+
             current_claim = line.replace(
                 "CLAIM:",
                 "",
@@ -103,6 +120,8 @@ RESPOSTA
         if evaluation["supported"]
     )
 
-    score = supported_claims / len(evaluations)
+    score = supported_claims / len(
+        evaluations
+    )
 
     return score, evaluations

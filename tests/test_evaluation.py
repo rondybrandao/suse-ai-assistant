@@ -10,6 +10,10 @@ from app.evaluation.answer_relevance import (
     calculate_answer_relevance,
 )
 
+from app.evaluation.faithfulness import (
+    calculate_faithfulness,
+)
+
 
 # Caminho do dataset de avaliação.
 EVALUATION_FILE = "data/evaluation/rag_eval.json"
@@ -125,6 +129,41 @@ def evaluate_answer_relevance(item):
         relevant_keywords,
     )
 
+
+def  evaluate_faithfulness(item):
+    """
+    Avalia se as afirmações da resposta
+    são sustentadas pelos contextos recuperados.
+
+    Retorna:
+
+        score:
+            percentual de afirmações sustentadas.
+
+        evaluations:
+            lista contendo cada afirmação
+            e seu respectivo status.
+    """
+
+    answer = item.get(
+        "generate_answer",
+        "",
+    )
+
+    contexts = item.get(
+        "retrieved_context",
+        [],
+    )
+
+    score, evaluations = calculate_faithfulness(
+        answer,
+        contexts,
+    )
+
+    return score, evaluations
+
+
+
 def main():
     """
     Executa todas as métricas de avaliação
@@ -169,6 +208,14 @@ def main():
             item
         )
 
+        # ----------------------------------------
+        # FAITHFULNESS
+        # ----------------------------------------
+
+        faithfulness_score, evaluations = (
+            evaluate_faithfulness(item)
+        )
+
         print()
         print("----------------------------------------")
         print(f"Pergunta {index}")
@@ -200,6 +247,32 @@ def main():
             f"Answer Relevance: "
             f"{answer_score:.2f}"
         )
+
+        print(
+            f"Faithfulness: "
+            f"{faithfulness_score:.2f}"
+        )
+
+        # ----------------------------------------
+        # CLAIMS
+        # ----------------------------------------
+
+        print()
+        print("Claims avaliadas:")
+
+        for claim in evaluations:
+
+            status = (
+                "SUPPORTED"
+                if claim["supported"]
+                else "NOT_SUPPORTED"
+            )
+
+            print(
+                f"- {status}: "
+                f"{claim['claim']}"
+            )
+
 
 
 if __name__ == "__main__":
