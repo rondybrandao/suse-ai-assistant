@@ -12,28 +12,12 @@ def calculate_faithfulness(
     answer,
     contexts,
 ):
-    """
-    Avalia se as afirmações da resposta
-    são sustentadas pelos contextos recuperados.
-
-    Retorna:
-
-        score:
-            proporção de afirmações sustentadas.
-
-        evaluations:
-            lista com cada afirmação e seu status.
-    """
-
-    context_text = "\n\n".join(
-        contexts
-    )
+    context_text = "\n\n".join(contexts)
 
     prompt = f"""
 Você é um avaliador de Faithfulness para um sistema RAG.
 
-Analise a resposta abaixo usando EXCLUSIVAMENTE
-o contexto fornecido.
+Analise a resposta abaixo usando EXCLUSIVAMENTE o contexto fornecido.
 
 Sua tarefa é:
 
@@ -70,13 +54,54 @@ RESPOSTA
 
 {answer}
 """
-
+    """
+    A documentação atual da API mostra thinking_level como configuração do Gemini 
+    e explica que reduzir o nível de thinking é preferível a limitar artificialmente 
+    max_output_tokens, justamente para evitar que o modelo consuma o orçamento pensando 
+    e termine sem resposta.
+    """
     interaction = client.interactions.create(
-        model="gemini-3.6-flash",
-        input=prompt,
-    )
+    model="gemini-3.4-flash",
+    input=prompt,
+    generation_config={
+        "thinking_level": "minimal",
+    },
+    response_modalities=["text"]
+)
+
+    print()
+    print("========================================")
+    print("DEBUG FAITHFULNESS")
+    print("========================================")
+
+    print()
+    print("========================================")
+    print("DEBUG FAITHFULNESS")
+    print("========================================")
+
+    print("Interaction:")
+    print(interaction)
+
+    print()
+    print("Output text:")
+    print(repr(interaction.output_text))
+
+    print()
+    print("Attributes disponíveis:")
+    print(dir(interaction))
+
+    print("========================================")
+
+    print("========================================")
 
     output = interaction.output_text.strip()
+
+    print()
+    print("========================================")
+    print("RESPOSTA DO JUIZ LLM")
+    print("========================================")
+    print(output)
+    print("========================================")
 
     evaluations = []
 
@@ -87,7 +112,6 @@ RESPOSTA
         line = line.strip()
 
         if line.startswith("CLAIM:"):
-
             current_claim = line.replace(
                 "CLAIM:",
                 "",
@@ -120,8 +144,6 @@ RESPOSTA
         if evaluation["supported"]
     )
 
-    score = supported_claims / len(
-        evaluations
-    )
+    score = supported_claims / len(evaluations)
 
     return score, evaluations

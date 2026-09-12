@@ -10,7 +10,7 @@ from app.evaluation.answer_relevance import (
     calculate_answer_relevance,
 )
 
-from app.evaluation.faithfulness import (
+from app.evaluation.faithfulness_LLM_as_a_judge import (
     calculate_faithfulness,
 )
 
@@ -154,6 +154,18 @@ def  evaluate_faithfulness(item):
         "retrieved_context",
         [],
     )
+
+    print()
+    print("========================================")
+    print("DEBUG ANSWER")
+    print("========================================")
+    print("Tipo da resposta:", type(answer))
+    print("Tamanho da resposta:", len(answer))
+    print("Resposta:")
+    print(repr(answer))
+    print()
+    print("Quantidade de contextos:", len(contexts))
+    print("========================================")
 
     score, evaluations = calculate_faithfulness(
         answer,

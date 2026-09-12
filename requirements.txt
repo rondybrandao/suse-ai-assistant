@@ -22,3 +22,6 @@ httpx
 langchain-openai
 
 google-genai
+
+onnxruntime
+tokenizers
