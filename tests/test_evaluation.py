@@ -6,6 +6,11 @@ from app.evaluation.context_relevance import (
     calculate_context_relevance,
 )
 
+from app.evaluation.answer_relevance import (
+    calculate_answer_relevance,
+)
+
+
 # Caminho do dataset de avaliação.
 EVALUATION_FILE = "data/evaluation/rag_eval.json"
 
@@ -85,12 +90,45 @@ def evaluate_context_relevance(item):
     )
 
 
+def evaluate_answer_relevance(item):
+    """
+    Calcula a relevância da resposta gerada.
 
+    A métrica verifica se palavras importantes
+    presentes na pergunta também aparecem
+    na resposta.
+
+    Esta implementação é uma heurística simples
+    baseada em palavras-chave.
+    """
+
+    question = item["question"]
+
+    answer = item.get(
+        "generated_answer",
+        "",
+    )
+
+    relevant_keywords = [
+        "fechamento",
+        "finalização",
+        "finalizado",
+        "finalizada",
+        "encerramento",
+        "pagamento",
+        "processado",
+    ]
+
+    return calculate_answer_relevance(
+        question,
+        answer,
+        relevant_keywords,
+    )
 
 def main():
     """
-    Executa as métricas de avaliação para
-    todas as perguntas do dataset.
+    Executa todas as métricas de avaliação
+    para as perguntas do dataset.
     """
 
     dataset = load_evaluation_dataset()
@@ -123,18 +161,31 @@ def main():
             item
         )
 
+        # ----------------------------------------
+        # ANSWER RELEVANCE
+        # ----------------------------------------
+
+        answer_score = evaluate_answer_relevance(
+            item
+        )
+
         print()
         print("----------------------------------------")
         print(f"Pergunta {index}")
         print("----------------------------------------")
 
-        print(f"Pergunta: {question}")
+        print(
+            f"Pergunta: {question}"
+        )
 
         if retrieval_score is None:
+
             print(
                 "Recall@5: não definido"
             )
+
         else:
+
             print(
                 f"Recall@5: "
                 f"{retrieval_score:.2f}"
@@ -143,6 +194,11 @@ def main():
         print(
             f"Context Relevance: "
             f"{context_score:.2f}"
+        )
+
+        print(
+            f"Answer Relevance: "
+            f"{answer_score:.2f}"
         )
 
 
