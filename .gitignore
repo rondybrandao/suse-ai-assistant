@@ -29,3 +29,6 @@ credentials/
 
 # Logs
 *.log
+
+# Modelos NLI / Grounding
+models/grounding/
