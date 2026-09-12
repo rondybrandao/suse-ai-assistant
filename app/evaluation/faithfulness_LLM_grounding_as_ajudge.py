@@ -18,6 +18,13 @@ TOKENIZER_PATH = MODEL_DIR / "tokenizer.json"
 
 
 # ============================================================
+# CONFIGURAÇÃO
+# ============================================================
+
+ENTAILMENT_THRESHOLD = 0.45
+
+
+# ============================================================
 # LABELS DO MODELO
 # ============================================================
 
@@ -61,28 +68,9 @@ class FaithfulnessEvaluator:
 
         print("Modelo carregado com sucesso.\n")
 
-        print("Inputs do modelo:")
-
-        for input_info in self.session.get_inputs():
-            print(
-                f"  - {input_info.name}: "
-                f"{input_info.shape} "
-                f"{input_info.type}"
-            )
-
-        print("\nOutputs do modelo:")
-
-        for output_info in self.session.get_outputs():
-            print(
-                f"  - {output_info.name}: "
-                f"{output_info.shape} "
-                f"{output_info.type}"
-            )
-
-        print()
 
     # ========================================================
-    # PREDIÇÃO
+    # PREDIÇÃO NLI
     # ========================================================
 
     def predict(self, context: str, claim: str):
@@ -129,6 +117,7 @@ class FaithfulnessEvaluator:
             "contradiction": float(probabilities[2]),
         }
 
+
     # ========================================================
     # SOFTMAX
     # ========================================================
@@ -143,53 +132,194 @@ class FaithfulnessEvaluator:
         return probabilities / probabilities.sum()
 
 
+    # ========================================================
+    # SEPARAÇÃO DAS CLAIMS
+    # ========================================================
+
+    @staticmethod
+    def split_claims(answer: str):
+
+        claims = []
+
+        sentences = answer.replace("!", ".").replace("?", ".").split(".")
+
+        for sentence in sentences:
+
+            claim = sentence.strip()
+
+            if claim:
+                claims.append(claim)
+
+        return claims
+
+
+    # ========================================================
+    # AVALIAÇÃO DE FAITHFULNESS
+    # ========================================================
+
+    def evaluate(
+        self,
+        context: str,
+        generated_answer: str,
+    ):
+
+        claims = self.split_claims(
+            generated_answer
+        )
+
+        if not claims:
+            return {
+                "faithfulness_score": 0.0,
+                "total_claims": 0,
+                "supported_claims": 0,
+                "claims": [],
+            }
+
+        results = []
+
+        supported_claims = 0
+
+        for index, claim in enumerate(claims, start=1):
+
+            result = self.predict(
+                context=context,
+                claim=claim,
+            )
+
+            is_supported = (
+                result["label"] == "entailment"
+                and result["entailment"] >= ENTAILMENT_THRESHOLD
+            )
+
+            if is_supported:
+                supported_claims += 1
+
+            results.append({
+                "claim_id": index,
+                "claim": claim,
+                "label": result["label"],
+                "entailment": result["entailment"],
+                "neutral": result["neutral"],
+                "contradiction": result["contradiction"],
+                "supported": is_supported,
+            })
+
+        faithfulness_score = (
+            supported_claims / len(claims)
+        )
+
+        return {
+            "faithfulness_score": faithfulness_score,
+            "total_claims": len(claims),
+            "supported_claims": supported_claims,
+            "claims": results,
+        }
+
+
 # ============================================================
-# TESTE
+# TESTE DE FAITHFULNESS
 # ============================================================
 
 def main():
 
     print("=" * 60)
-    print("TESTE DO MODELO NLI - SUSE AI ASSISTANT")
+    print("AVALIAÇÃO DE FAITHFULNESS - SUSE AI ASSISTANT")
     print("=" * 60)
     print()
 
     evaluator = FaithfulnessEvaluator()
 
+    # --------------------------------------------------------
+    # CONTEXTO RECUPERADO PELO RAG
+    # --------------------------------------------------------
+
     context = (
-        "Quando uma OS é marcada como FINALIZADO, "
-        "o sistema registra o histórico do cliente."
+        "Uma OS pode ser aprovada pelo cliente. "
+        "Após a aprovação, a OS pode ser agendada "
+        "para execução do serviço."
     )
 
-    claim = (
-        "Quando a OS é finalizada, "
-        "o sistema registra o histórico do cliente."
+    # --------------------------------------------------------
+    # RESPOSTA GERADA PELO RAG
+    # --------------------------------------------------------
+
+    generated_answer = (
+        "A OS pode ser aprovada pelo cliente. "
+        "Após a aprovação, a OS pode ser agendada "
+        "para execução do serviço. "
+        "O cliente recebe automaticamente uma mensagem "
+        "pelo WhatsApp."
     )
 
     print("CONTEXTO:")
     print(context)
 
-    print("\nAFIRMAÇÃO:")
-    print(claim)
+    print("\nRESPOSTA GERADA:")
+    print(generated_answer)
 
-    print("\nExecutando NLI...\n")
+    print("\nExecutando avaliação...\n")
 
-    result = evaluator.predict(
+    result = evaluator.evaluate(
         context=context,
-        claim=claim,
+        generated_answer=generated_answer,
     )
 
-    print("RESULTADO:")
-    print(f"Classificação: {result['label']}")
+    # --------------------------------------------------------
+    # RESULTADO
+    # --------------------------------------------------------
+
+    print("=" * 60)
+    print("RESULTADO")
+    print("=" * 60)
+
     print(
-        f"Entailment:   {result['entailment']:.4f}"
+        f"\nFaithfulness Score: "
+        f"{result['faithfulness_score']:.2%}"
     )
+
     print(
-        f"Neutral:       {result['neutral']:.4f}"
+        f"Claims suportadas: "
+        f"{result['supported_claims']}/"
+        f"{result['total_claims']}"
     )
-    print(
-        f"Contradiction: {result['contradiction']:.4f}"
-    )
+
+    print("\nANÁLISE DAS CLAIMS:")
+    print("-" * 60)
+
+    for claim_result in result["claims"]:
+
+        print(
+            f"\nClaim {claim_result['claim_id']}:"
+        )
+
+        print(
+            f"  {claim_result['claim']}"
+        )
+
+        print(
+            f"  Classificação: "
+            f"{claim_result['label']}"
+        )
+
+        print(
+            f"  Entailment: "
+            f"{claim_result['entailment']:.4f}"
+        )
+
+        print(
+            f"  Neutral: "
+            f"{claim_result['neutral']:.4f}"
+        )
+
+        print(
+            f"  Contradiction: "
+            f"{claim_result['contradiction']:.4f}"
+        )
+
+        print(
+            f"  Suportada: "
+            f"{'SIM' if claim_result['supported'] else 'NÃO'}"
+        )
 
     print("\n" + "=" * 60)
 
