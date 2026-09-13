@@ -57,3 +57,34 @@ class ErpTools:
         )
 
         return len(os_list)
+
+    def count_finalized_os(
+    self,
+    beleza_id: str,
+    ) -> int:
+        """
+        Retorna somente a quantidade de OS finalizadas.
+        """
+
+        os_list = self.os_service.listar_por_status(
+            beleza_id,
+            "FINALIZADO",
+        )
+
+        return len(os_list)
+
+    def count_waiting_approval_os(
+    self,
+    beleza_id: str,
+    ) -> int:
+        """
+        Retorna somente a quantidade de OS
+        aguardando aprovação.
+        """
+
+        os_list = self.os_service.listar_por_status(
+            beleza_id,
+            "AGUARDANDO_APROVACAO",
+        )
+
+        return len(os_list)

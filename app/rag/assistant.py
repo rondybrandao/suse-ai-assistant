@@ -2,7 +2,7 @@ from app.rag.router import route_question
 from app.rag.generator import generate_answer
 from app.rag.embeddings import generate_embeddings
 from app.rag.qdrant_client import search_similar
-from app.tools.erp_tools import ErpTools
+from app.tools.tool_selector import ToolSelector
 
 
 class Assistant:
@@ -12,7 +12,7 @@ class Assistant:
     """
 
     def __init__(self):
-        self.erp_tools = ErpTools()
+        self.erp_tools = ToolSelector()
 
     def answer(
         self,
@@ -38,31 +38,30 @@ class Assistant:
         )
 
     def _answer_from_erp(
-        self,
-        question: str,
-        beleza_id: str,
+    self,
+    question: str,
+    beleza_id: str,
     ):
-        """
-        Responde perguta utilizando ERP
-        """
+        tool = self.tool_selector.select(
+            question
+        )
 
-        if (
-            "cancelada" in question.lower()
-            or "canceladas" in question.lower()
-        ):
-            total = self.erp_tools.count_cancelled_os(
-                beleza_id
+        if tool is None:
+            return (
+                "Não encontrei uma ferramenta ERP "
+                "para essa pergunta."
             )
 
-            contexts = [
-                f"O SUSE ERP possui {total} OS canceladas"
-            ]
+        total = tool(beleza_id)
 
-            return generate_answer(
-                question,
-                contexts
-            )
-        return "Não encontrei uma ferramenta ERP para essa pergunta."
+        contexts = [
+            f"O resultado da consulta ERP é {total}."
+        ]
+
+        return generate_answer(
+            question,
+            contexts,
+        )
 
     def _answer_from_rag(
         self,

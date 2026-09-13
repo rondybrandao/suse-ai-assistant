@@ -7,7 +7,7 @@ BELEZA_ID = "mock-ml-suse"
 def main():
     assistant = Assistant()
 
-    question = "Como funciona o processo de fechamento de uma OS?"
+    question = "Quantas OS estão finalizadas?"
 
     answer = assistant.answer(
         question,
