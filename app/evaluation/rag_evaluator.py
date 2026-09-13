@@ -137,8 +137,8 @@ def evaluate_retrieval(item):
 
 def evaluate_context_relevance(item):
     """
-    Avalia se os contextos recuperados são relevantes
-    para o assunto da pergunta.
+    Avalia a relevância semântica dos contextos recuperados
+    em relação à pergunta.
 
     A implementação da métrica está em:
 
@@ -147,16 +147,20 @@ def evaluate_context_relevance(item):
     Este método apenas fornece os dados necessários.
     """
 
+    question = item.get(
+        "question",
+        "",
+    )
+
     retrieved_contexts = item.get(
         "retrieved_context",
         [],
     )
 
     return calculate_context_relevance(
+        question,
         retrieved_contexts,
-        CONTEXT_RELEVANT_KEYWORDS,
     )
-
 
 def evaluate_answer_relevance(item):
     """
