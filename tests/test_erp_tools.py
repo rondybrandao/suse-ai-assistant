@@ -25,6 +25,14 @@ def main():
             os["pagamento_pendente"],
         )
 
+    total = tools.count_cancelled_os(
+    BELEZA_ID
+)
+
+    print(
+        f"\nQuantidade de OS canceladas: {total}"
+    )
+
 
 if __name__ == "__main__":
     main()

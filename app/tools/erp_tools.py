@@ -43,3 +43,17 @@ class ErpTools:
                 for os in os_list
             ],
         }
+
+    def count_cancelled_os(
+    self,
+    beleza_id: str,
+    ) -> int:
+        """
+        Retorna somente a quantidade de OS canceladas.
+        """
+
+        os_list = self.os_service.listar_canceladas(
+            beleza_id
+        )
+
+        return len(os_list)
