@@ -2,6 +2,8 @@ from typing import Any
 
 from app.suse.firebase import get_firestore
 
+from google.cloud.firestore_v1.base_query import FieldFilter
+
 class OsService:
     """
     Serviço Python para consulta das OS do SUSE ERP.
@@ -104,14 +106,46 @@ class OsService:
         documents = (
             self._collection(beleza_id)
             .where(
-                "status",
-                "==",
-                "FINALIZADO",
+                filter=FieldFilter(
+                    "status",
+                    "==",
+                    "FINALIZADO",
+                )
             )
             .where(
-                "pendencias.pagamento",
-                "==",
-                True,
+                filter=FieldFilter(
+                    "pendencias.pagamento",
+                    "==",
+                    True,
+                )
+            )
+            .stream()
+        )
+
+        return [
+            {
+                "id": document.id,
+                **document.to_dict(),
+            }
+            for document in documents
+        ]
+
+    def listar_canceladas(
+    self,
+    beleza_id: str,
+    ) -> list[dict[str, Any]]:
+        """
+        Lista as OS canceladas.
+        """
+
+        documents = (
+            self._collection(beleza_id)
+            .where(
+                filter=FieldFilter(
+                    "status",
+                    "==",
+                    "CANCELADO",
+                )
             )
             .stream()
         )
