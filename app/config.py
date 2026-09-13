@@ -20,6 +20,8 @@ class Settings(BaseSettings):
 
     firebase_service_account: str
 
+    hf_token: str
+
     class Config:
         env_file = ".env"
 
