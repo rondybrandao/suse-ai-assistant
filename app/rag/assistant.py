@@ -3,6 +3,7 @@ from app.rag.generator import generate_answer
 from app.rag.embeddings import generate_embeddings
 from app.rag.qdrant_client import search_similar
 from app.tools.tool_selector import ToolSelector
+from app.tools.llm_tool_caller import LlmToolCaller
 
 
 class Assistant:
@@ -12,7 +13,8 @@ class Assistant:
     """
 
     def __init__(self):
-        self.erp_tools = ToolSelector()
+        # responsavel pelo tool calling com LLM
+        self.llm_tool_caller = LlmToolCaller()
 
     def answer(
         self,
@@ -42,25 +44,14 @@ class Assistant:
     question: str,
     beleza_id: str,
     ):
-        tool = self.tool_selector.select(
-            question
-        )
+        """
+        Responde perguntas sobre dados atuais
+        do ERP utilizando LLM Tool Calling
+        """
 
-        if tool is None:
-            return (
-                "Não encontrei uma ferramenta ERP "
-                "para essa pergunta."
-            )
-
-        total = tool(beleza_id)
-
-        contexts = [
-            f"O resultado da consulta ERP é {total}."
-        ]
-
-        return generate_answer(
+        return self.llm_tool_caller.call(
             question,
-            contexts,
+            beleza_id,
         )
 
     def _answer_from_rag(
