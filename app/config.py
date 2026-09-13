@@ -18,6 +18,8 @@ class Settings(BaseSettings):
 
     gemini_model: str = "gemini-3.7-flash"
 
+    firebase_service_account: str
+
     class Config:
         env_file = ".env"
 

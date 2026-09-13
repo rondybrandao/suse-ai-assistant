@@ -25,3 +25,5 @@ google-genai
 
 onnxruntime
 tokenizers
+
+firebase-admin
