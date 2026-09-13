@@ -12,6 +12,11 @@ def generate_answer(
     question,
     contexts,
 ):
+    """
+    Gera uma resposta utilizando os contextos 
+    recuperados pelo RAG
+    """
+
     context_text = "\n\n".join(
         contexts
     )
@@ -38,7 +43,7 @@ Resposta:
 """
 
     interaction = client.interactions.create(
-        model="gemini-3.6-flash",
+        model=settings.gemini_model,
         input=prompt,
     )
 
