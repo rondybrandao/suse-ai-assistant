@@ -9,7 +9,7 @@ from app.tools.llm_tool_caller import LlmToolCaller
 class Assistant:
     """
     Orquestra o atendimeto do SUSE AI Assistant.
-    Decide se a pergunta deve utilizar o ERP ou RAG
+    Decide se a pergunta deve utilizar o ERP ou RAG ou hibrido
     """
 
     def __init__(self):

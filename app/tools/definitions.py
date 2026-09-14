@@ -30,3 +30,28 @@ ERP_TOOL_DEFINITIONS = [
         }
     },
 ]
+
+RAG_TOOL_DEFINITIONS = [
+    {
+        "name": "search_suse_documentation",
+        "description": (
+            "Busca informações na documentação do SUSE ERP. "
+            "Use esta ferramenta quando a pergunta precisar "
+            "de procedimentos, regras, conceitos ou explicações "
+            "sobre o funcionamento do sistema."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": (
+                        "Pergunta que deve ser pesquisada "
+                        "na documentação do SUSE."
+                    ),
+                },
+            },
+            "required": ["question"],
+        },
+    },
+]
