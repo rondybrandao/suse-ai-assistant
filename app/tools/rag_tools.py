@@ -35,7 +35,7 @@ class RagTools:
         )
 
         contexts = [
-            results.payload["text"]
+            result.payload["text"]
             for result in results
             if result.payload and "text" in result.payload
         ]

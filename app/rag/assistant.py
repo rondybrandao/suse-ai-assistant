@@ -1,19 +1,19 @@
-from app.rag.router import route_question
 from app.rag.generator import generate_answer
-from app.rag.embeddings import generate_embeddings
-from app.rag.qdrant_client import search_similar
-from app.tools.tool_selector import ToolSelector
 from app.tools.llm_tool_caller import LlmToolCaller
 
 
 class Assistant:
     """
-    Orquestra o atendimeto do SUSE AI Assistant.
-    Decide se a pergunta deve utilizar o ERP ou RAG ou hibrido
+    Orquestra o atendimento do SUSE AI Assistant.
+
+    O LLM decide quais ferramentas devem ser utilizadas:
+    - ferramentas do ERP
+    - ferramenta de busca na documentação (RAG)
+    - ou ambas
     """
 
     def __init__(self):
-        # responsavel pelo tool calling com LLM
+        # Responsável pelo tool calling com o LLM.
         self.llm_tool_caller = LlmToolCaller()
 
     def answer(
@@ -22,74 +22,64 @@ class Assistant:
         beleza_id: str,
     ):
         """
-        Processa uma pergunta e direciona para fonte adequada
+        Processa a pergunta utilizando o fluxo de
+        tool calling.
+
+        O LLM decide se precisa consultar:
+        - ERP
+        - RAG
+        - ERP + RAG
         """
 
-        route = route_question(
-            question
-        )
-
-        if route == "erp":
-            return self._answer_from_erp(
-                question,
-                beleza_id,
-            )
-
-        return self._answer_from_rag(
-            question
-        )
-
-    def _answer_from_erp(
-    self,
-    question: str,
-    beleza_id: str,
-    ):
-        """
-        Responde perguntas sobre dados atuais
-        do ERP utilizando LLM Tool Calling
-        """
-
-        return self.llm_tool_caller.call(
+        tool_result = self.llm_tool_caller.call_with_tools(
             question,
             beleza_id,
         )
 
-    def _answer_from_rag(
-        self,
-        question: str,
-    ):
-        """
-        Mantém o fluxo RAG para perguntas
-        relacionadas à documentação.
-        """
+        print("\n=== RESULTADOS DAS FERRAMENTAS ===")
+        print(tool_result)
 
-        # Transforma a perguta em embedding
-        query_embedding = generate_embeddings(
-            [question]
-        )[0]
+        # Se o LLM respondeu diretamente sem utilizar
+        # nenhuma ferramenta, retornamos a resposta.
+        if not tool_result["results"]:
+            return tool_result["response"]
 
-        # Busca os chunks semanticamente mais proximos
-        results = search_similar(
-            query_embedding,
-            limit=5,
-        )
+        contexts = []
 
-        # Extrai o texto armazenado no payload do Qdrant
-        contexts = [
-            result.payload["text"]
-            for result in results
-        ]
+        for item in tool_result["results"]:
+            result = item.get("result")
+
+            if not result:
+                continue
+
+            # Resultado da ferramenta RAG.
+            if item["tool"] == "search_suse_documentation":
+                contexts.extend(
+                    result.get("contexts", [])
+                )
+
+            # Resultado de ferramentas ERP.
+            else:
+                contexts.append(
+                    f"Resultado da ferramenta {item['tool']}: "
+                    f"{result}"
+                )
 
         if not contexts:
             return (
-                "Não encontrei informações suficiente na documentação"
+                "Não foi possível obter informações "
+                "para responder à pergunta."
             )
 
+        print("\n=== CONTEXTOS ENVIADOS AO GEMINI ===")
+
+        for i, context in enumerate(contexts, start=1):
+            print(f"\n--- CONTEXTO {i} ---")
+            print(context)
+
+        # O Gemini transforma os resultados das ferramentas
+        # em uma resposta final para o usuário.
         return generate_answer(
             question,
             contexts,
         )
-
-
-
-        

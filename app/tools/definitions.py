@@ -42,16 +42,7 @@ RAG_TOOL_DEFINITIONS = [
         ),
         "parameters": {
             "type": "object",
-            "properties": {
-                "question": {
-                    "type": "string",
-                    "description": (
-                        "Pergunta que deve ser pesquisada "
-                        "na documentação do SUSE."
-                    ),
-                },
-            },
-            "required": ["question"],
+            "properties": {},
         },
     },
 ]

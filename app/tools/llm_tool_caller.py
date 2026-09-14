@@ -31,7 +31,7 @@ class LlmToolCaller:
         self.erp_tools = ErpTools()
         self.rag_tools = RagTools()
 
-
+        # Mapeia o nome informado pelo LLM
         self.tools = {
             "count_cancelled_os": (
                 self.erp_tools.count_cancelled_os
@@ -60,7 +60,7 @@ class LlmToolCaller:
 
         return [
             {
-                "type:": "function",
+                "type": "function",
                 "function": definition,
             }
             for definition in definitions
@@ -69,16 +69,19 @@ class LlmToolCaller:
     def _execute_tool(
             self,
             tool_call,
-            message,
             beleza_id: str,
+            original_question: str,
     ) -> dict[str, Any]:
 
         """
-        Executa o total solicitado pelo LLM
-        Cada ferramenta possui uma assinatura diferente:
+        Executa no Python a ferramenta solicitada pelo LLM.
 
-        ERP: ferramenta(beleza_id)
-        RAG: ferramenta(question)
+        O LLM apenas escolhe a ferramenta.
+        
+        Para o RAG usamos a pergunta original do usuário,
+        evitando que uma reformulação do LLM prejudique
+        a recuperação semântica.
+
         """
 
         tool_name = tool_call.function.name
@@ -105,8 +108,9 @@ class LlmToolCaller:
                 ),
             }
 
+        # RAG recebe a pergunta original.
         if tool_name == "search_suse_documentation":
-            result = tool(**arguments)
+            result = tool(original_question)
         else:
             result = tool(
                 beleza_id,
@@ -127,7 +131,7 @@ class LlmToolCaller:
         """
         Envia a pergunta ao LLM e executa todas as
         ferramentas solicitadas.
-        Retorna os resultados estruturados
+
         """
 
         tools = self._get_tool_definitions()
@@ -159,10 +163,12 @@ class LlmToolCaller:
 
         results = []
 
+        # executa cada ferramenta solicitada pelo LLM.
         for tool_call in message.tool_calls:
             result = self._execute_tool(
                 tool_call,
                 beleza_id,
+                question,
             )
 
             results.append(result)

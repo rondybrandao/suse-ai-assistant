@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 
     gemini_api_key: str
 
-    gemini_model: str = "gemini-3.7-flash"
+    gemini_model: str = "gemini-3.6-flash"
 
     firebase_service_account: str
 
