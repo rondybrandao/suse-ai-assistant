@@ -11,6 +11,8 @@ from app.tools.definitions import (
 from app.tools.erp_tools import ErpTools
 from app.tools.rag_tools import RagTools
 
+import time
+
 
 MODEL_ID = "Qwen/Qwen3-4B-Thinking-2507"
 PROVIDER = "featherless-ai"
@@ -134,6 +136,8 @@ class LlmToolCaller:
 
         """
 
+        inicio_total = time.perf_counter()
+
         tools = self._get_tool_definitions()
 
         messages = [
@@ -143,11 +147,20 @@ class LlmToolCaller:
             }
         ]
 
+        inicio_llm = time.perf_counter()
+
         response = self.client.chat.completions.create(
             model=MODEL_ID,
             messages=messages,
             tools=tools,
             tool_choice="auto"
+        )
+
+        fim_llm = time.perf_counter()
+
+        print(
+            f"[TRACE] LLM tool calling: "
+            f"{fim_llm - inicio_llm:.2f}s"
         )
 
         message = response.choices[0].message
@@ -161,6 +174,8 @@ class LlmToolCaller:
                 "response": message.content or "",
             }
 
+        inicio_tools = time.perf_counter()
+
         results = []
 
         # executa cada ferramenta solicitada pelo LLM.
@@ -172,6 +187,18 @@ class LlmToolCaller:
             )
 
             results.append(result)
+
+        fim_tools = time.perf_counter()
+
+        print(
+            f"[TRACE] Execução das ferramentas: "
+            f"{fim_tools - inicio_tools:.2f}s"
+        )
+
+        print(
+            f"[TRACE] LlmToolCaller total: "
+            f"{fim_tools - inicio_total:.2f}s"
+        )
 
         return {
             "tool_calls": [
