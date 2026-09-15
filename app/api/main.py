@@ -1,7 +1,10 @@
-from fastapi import FastAPI 
+from fastapi import FastAPI, Depends 
 from pydantic import BaseModel
 
 from app.rag.assistant import Assistant
+from app.api.auth import verify_firebase_token
+
+from app.api.authorization import get_authorized_beleza_id
 
 app = FastAPI(
     title="SUSE AI Assistant",
@@ -15,15 +18,12 @@ class AssistantRequest(BaseModel):
     """
     Dados enviados pelo SUSE ERP para o assitant.
     """
-
     question: str
-    beleza_id: str
 
 class AssistantResponse(BaseModel):
     """
     Resposta devolvida pelo Assistant.
     """
-
     answer: str
 
 
@@ -31,14 +31,23 @@ class AssistantResponse(BaseModel):
     "/api/assistant/ask",
     response_model=AssistantResponse,
 )
-def ask_assistant(request: AssistantRequest):
+def ask_assistant(
+    request: AssistantRequest,
+    user: dict = Depends(verify_firebase_token),
+):
     """
-    Recebe pergunta do suse erp e encaminha para assistant
+    Recebe pergunta autenticada do suse erp e encaminha para assistant
+
+    O firebase ID Token é validado antes de executar o Assistant.
     """
+
+    uid = user["uid"]
+
+    beleza_id = get_authorized_beleza_id(uid)
 
     answer = assistant.answer(
         question=request.question,
-        beleza_id=request.beleza_id,
+        beleza_id=beleza_id,
     )
 
     return AssistantResponse(
