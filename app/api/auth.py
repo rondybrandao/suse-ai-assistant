@@ -14,14 +14,14 @@ def verify_firebase_token(
             detail="Token de autenticação não informado."
         )
 
-    if not autorization.startswith("Barear "):
+    if not autorization.startswith("Bearer "):
         raise HTTPException(
             status_code=401,
             detail="Formato do Token invalido."
         )
 
     token = autorization.replace(
-        "Barear ",
+        "Bearer ",
         "",
         1,
     ).strip()

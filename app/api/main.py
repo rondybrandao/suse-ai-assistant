@@ -6,10 +6,20 @@ from app.api.auth import verify_firebase_token
 
 from app.api.authorization import get_authorized_beleza_id
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title="SUSE AI Assistant",
     description="API do assistente de IA integrada ao SUSE ERP",
     version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200",],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 assistant = Assistant()
