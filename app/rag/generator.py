@@ -2,6 +2,8 @@ from google import genai
 
 from app.config import settings
 
+import time
+
 
 client = genai.Client(
     api_key=settings.gemini_api_key
@@ -41,10 +43,28 @@ Pergunta:
 
 Resposta:
 """
+    inicio = time.perf_counter()
+
+    print(
+        f"[TRACE] Contextos enviados ao Gemini: "
+        f"{len(contexts)}"
+    )
+
+    print(
+        f"[TRACE] Tamanho do prompt: "
+        f"{len(prompt)} caracteres"
+    )
 
     interaction = client.interactions.create(
         model=settings.gemini_model,
         input=prompt,
+    )
+
+    fim = time.perf_counter()
+
+    print(
+        f"[TRACE] Gemini geração: "
+        f"{fim - inicio:.2f}s"
     )
 
     return interaction.output_text
