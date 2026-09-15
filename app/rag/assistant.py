@@ -36,8 +36,8 @@ class Assistant:
             beleza_id,
         )
 
-        print("\n=== RESULTADOS DAS FERRAMENTAS ===")
-        print(tool_result)
+        #print("\n=== RESULTADOS DAS FERRAMENTAS ===")
+        #print(tool_result)
 
         # Se o LLM respondeu diretamente sem utilizar
         # nenhuma ferramenta, retornamos a resposta.
@@ -71,11 +71,11 @@ class Assistant:
                 "para responder à pergunta."
             )
 
-        print("\n=== CONTEXTOS ENVIADOS AO GEMINI ===")
+        #print("\n=== CONTEXTOS ENVIADOS AO GEMINI ===")
 
-        for i, context in enumerate(contexts, start=1):
-            print(f"\n--- CONTEXTO {i} ---")
-            print(context)
+        #for i, context in enumerate(contexts, start=1):
+        #    print(f"\n--- CONTEXTO {i} ---")
+        #    print(context)
 
         # O Gemini transforma os resultados das ferramentas
         # em uma resposta final para o usuário.
